@@ -16,3 +16,7 @@ Para gerar um token de acesso pessoal no GitHub, siga os passos abaixo:
 9. O token de acesso será gerado e exibido na tela. **Copie o token** e guarde-o em um local seguro.
 
 > **Nota:** Por motivos de segurança, o token só será exibido uma vez e não poderá ser recuperado posteriormente. Use o token em suas aplicações ou scripts como uma forma de autenticação com a API do GitHub.
+
+
+## Precisa instalar na maquina o GH!
+-> https://github.com/cli/cli/releases/download/v2.64.0/gh_2.64.0_windows_amd64.msi
