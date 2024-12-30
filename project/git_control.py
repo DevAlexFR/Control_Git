@@ -58,36 +58,46 @@ class GIT_CONTROL:
             page += 1
 
     def clone_all_user_repos(self, dest_path: str, username: str) -> None:
-        """ Clona todos os repositórios publicos e ou privados se o username for == user do SU_KEYS do usuário para um diretório de destino especificado.
+        """Clona todos os repositórios públicos e/ou privados de um usuário para um diretório de destino especificado.
 
         Parameters
         ----------
         dest_path : str
             Diretório de destino onde os repositórios serão clonados.
-        username : str 
-            Nome do usuário do GitHub cujos repositórios públicos serão clonados. Caso este nome seja iqual o nome em SU_KEYS clona os privados tambem.
-            
+        username : str
+            Nome do usuário do GitHub cujos repositórios serão clonados. Caso este nome seja igual ao nome em SU_KEYS,
+            também clona os repositórios privados.
+
         Exemplo de uso:
         ---------
             gc = GIT_CONTROL()
-            gc.clone_all_user_repos(dest_path='C:\\Project\\DESTINO', clone_private=True)
+            gc.clone_all_user_repos(dest_path='C:\\Project\\DESTINO', username='User123')
         """
-        if username == self.user:
-            response = requests.get(
-                f"https://api.github.com/user/repos?per_page=200",
-                auth=(self.user, self.token)
-            )  
-        else:
-            response = requests.get(
-                f"https://api.github.com/users/{username}/repos?per_page=200",
-                auth=(self.user, self.token)
-            )
-        repos = response.json()
+        page = 1
+        while True:
+            if username == self.user:
+                response = requests.get(
+                    f"https://api.github.com/user/repos?per_page=200&page={page}",
+                    auth=(self.user, self.token)
+                )
+            else:
+                response = requests.get(
+                    f"https://api.github.com/users/{username}/repos?per_page=200&page={page}",
+                    auth=(self.user, self.token)
+                )
+            
+            repos = response.json()
 
-        for repo in repos:
-            repo_dir_dest = os.path.join(dest_path, repo['name'])
-            command = f"git clone {repo['html_url']} {repo_dir_dest}"
-            os.system(command)
+            if not repos:
+                break
+
+            for repo in repos:
+                repo_dir_dest = os.path.join(dest_path, repo['name'])
+                if not os.path.exists(repo_dir_dest):
+                    command = f"git clone {repo['html_url']} {repo_dir_dest}"
+                    os.system(command)
+
+            page += 1
 
 
     def create_all_repos_org(self, orig_path: str, dest_org: str):
@@ -96,7 +106,7 @@ class GIT_CONTROL:
         Parameters
         ----------
         orig_path : str
-            Caminho com todos os projetos que quer criar um repositorio, NÃO PODE TER .GIT nas pastas!!!!!
+            Caminho com todos os projetos que quer criar um repositorio
         dest_org : str
             Nome da organização de destino destes repositorios
 
@@ -111,6 +121,11 @@ class GIT_CONTROL:
                     repo_exists = os.system(f'gh repo view {dest_org}/{path}') == 0
                     if not repo_exists:
                         os.chdir(full_path)
+
+                        git_folder = os.path.join(full_path, '.git')
+                        if os.path.exists(git_folder):
+                            os.system(f'rmdir /s /q "{git_folder}"')
+                        
                         os.system(f'gh repo create {dest_org}/{path} --private')
                         
                         os.system('git init')
