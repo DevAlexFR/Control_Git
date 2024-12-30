@@ -79,3 +79,39 @@ class GIT_CONTROL:
             repo_dir_dest = os.path.join(dest_path, repo['name'])
             command = f"git clone {repo['html_url']} {repo_dir_dest}"
             os.system(command)
+
+
+    def create_all_repos_org(self, orig_path: str, dest_org: str):
+        """ Cria repositorios na organização de destino ja alimentados
+
+        Parameters
+        ----------
+        orig_path : str
+            Caminho com todos os projetos que quer criar um repositorio, NÃO PODE TER .GIT nas pastas!!!!!
+        dest_org : str
+            Nome da organização de destino destes repositorios
+
+        Exemplo de uso:
+        ----------
+            gc = GIT_CONTROL()
+            gc.create_all_repos_org('C:\\Project', 'minhaORG')
+        """
+        for path in os.listdir(orig_path):
+                repo_exists = os.system(f'gh repo view {dest_org}/{path}') == 0
+                if not repo_exists:
+                    os.chdir(os.path.join(orig_path, path))
+                    os.system(f'gh repo create {dest_org}/{path} --private')
+                    
+                    if not os.path.exists('.git'):
+                        os.system('git init')
+
+                    os.system('git add .')
+                    os.system('git commit -m "Initial commit"')
+
+                    remote_check = os.system('git remote show origin')
+                    if remote_check != 0:
+                        os.system(f'git remote add origin https://github.com/{dest_org}/{path}.git')
+
+                    os.system('git branch -M main')
+                    os.system('git push -u origin main')
+                pass
