@@ -97,21 +97,21 @@ class GIT_CONTROL:
             gc.create_all_repos_org('C:\\Project', 'minhaORG')
         """
         for path in os.listdir(orig_path):
-                repo_exists = os.system(f'gh repo view {dest_org}/{path}') == 0
-                if not repo_exists:
-                    os.chdir(os.path.join(orig_path, path))
-                    os.system(f'gh repo create {dest_org}/{path} --private')
-                    
-                    if not os.path.exists('.git'):
+                full_path = os.path.join(orig_path, path)
+                if os.path.isdir(full_path):
+                    repo_exists = os.system(f'gh repo view {dest_org}/{path}') == 0
+                    if not repo_exists:
+                        os.chdir(full_path)
+                        os.system(f'gh repo create {dest_org}/{path} --private')
+                        
                         os.system('git init')
+                        os.system('git add .')
+                        os.system('git commit -m "Initial commit"')
 
-                    os.system('git add .')
-                    os.system('git commit -m "Initial commit"')
+                        remote_check = os.system('git remote show origin')
+                        if remote_check != 0:
+                            os.system(f'git remote add origin https://github.com/{dest_org}/{path}.git')
 
-                    remote_check = os.system('git remote show origin')
-                    if remote_check != 0:
-                        os.system(f'git remote add origin https://github.com/{dest_org}/{path}.git')
-
-                    os.system('git branch -M main')
-                    os.system('git push -u origin main')
+                        os.system('git branch -M main')
+                        os.system('git push -u origin main')
                 pass
