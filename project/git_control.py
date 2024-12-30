@@ -114,4 +114,3 @@ class GIT_CONTROL:
 
                         os.system('git branch -M main')
                         os.system('git push -u origin main')
-                pass
