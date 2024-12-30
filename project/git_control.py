@@ -57,7 +57,7 @@ class GIT_CONTROL:
             
             page += 1
 
-    def clone_all_user_repos(self, dest_path: str, username: str) -> None:
+    def clone_all_user_repos(self, dest_path: str, username: str, owner: bool = False) -> None:
         """Clona todos os repositórios públicos e/ou privados de um usuário para um diretório de destino especificado.
 
         Parameters
@@ -65,8 +65,9 @@ class GIT_CONTROL:
         dest_path : str
             Diretório de destino onde os repositórios serão clonados.
         username : str
-            Nome do usuário do GitHub cujos repositórios serão clonados. Caso este nome seja igual ao nome em SU_KEYS,
-            também clona os repositórios privados.
+            Nome do usuário do GitHub cujos repositórios serão clonados. Caso este nome seja igual ao nome em SU_KEYS, também clona os repositórios privados.
+        owner : bool
+            Se True -> Caso este nome seja igual ao nome em SU_KEYS, para todas organização onde for o owner, também clona os repositórios privados.
 
         Exemplo de uso:
         ---------
@@ -76,10 +77,16 @@ class GIT_CONTROL:
         page = 1
         while True:
             if username == self.user:
-                response = requests.get(
-                    f"https://api.github.com/user/repos?per_page=200&page={page}",
-                    auth=(self.user, self.token)
-                )
+                if owner:
+                    response = requests.get(
+                        f"https://api.github.com/user/repos?per_page=200&page={page}",
+                        auth=(self.user, self.token)
+                    )
+                else:
+                    response = requests.get(
+                        f"https://api.github.com/user/repos?type=owner&per_page=200&page={page}",
+                        auth=(self.user, self.token)
+                    )
             else:
                 response = requests.get(
                     f"https://api.github.com/users/{username}/repos?per_page=200&page={page}",
