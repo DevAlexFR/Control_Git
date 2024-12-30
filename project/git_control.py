@@ -37,16 +37,25 @@ class GIT_CONTROL:
             gc = GIT_CONTROL()
             gc.clone_all_org_repo(dest_path='C:\\Project\\DESTINO')
         """
-        response = requests.get(
-            f"https://api.github.com/orgs/{self.org}/repos?per_page=200", 
-            auth=(self.user, self.token)
-        ) 
-        repos = response.json()
+        page = 1
+        while True:
+            response = requests.get(
+                f"https://api.github.com/orgs/{self.org}/repos?per_page=200&page={page}", 
+                auth=(self.user, self.token)
+            ) 
+            repos = response.json()
 
-        for repo in repos: 
-            repo_dir_dest = os.path.join(dest_path, repo['name'])
-            command = f"git clone {repo['html_url']}.git {repo_dir_dest}"
-            os.system(command)
+            if not repos:
+                break
+
+            for repo in repos: 
+                repo_dir_dest = os.path.join(dest_path, repo['name'])
+                if not os.path.exists(repo_dir_dest):
+                    repo_dir_dest = os.path.join(dest_path, repo['name'])
+                    command = f"git clone {repo['html_url']}.git {repo_dir_dest}"
+                    os.system(command)
+            
+            page += 1
 
     def clone_all_user_repos(self, dest_path: str, username: str) -> None:
         """ Clona todos os repositórios publicos e ou privados se o username for == user do SU_KEYS do usuário para um diretório de destino especificado.
