@@ -108,14 +108,14 @@ class GIT_CONTROL:
 
 
     def create_all_repos_org(self, orig_path: str, dest_org: str):
-        """ Cria repositorios na organização de destino ja alimentados
+        """ Cria ou atualiza repositórios na organização de destino com o conteúdo local
 
         Parameters
         ----------
         orig_path : str
-            Caminho com todos os projetos que quer criar um repositorio
+            Caminho com todos os projetos que deseja criar ou atualizar em um repositório
         dest_org : str
-            Nome da organização de destino destes repositorios
+            Nome da organização de destino destes repositórios
 
         Exemplo de uso:
         ----------
@@ -123,25 +123,39 @@ class GIT_CONTROL:
             gc.create_all_repos_org('C:\\Project', 'minhaORG')
         """
         for path in os.listdir(orig_path):
-                full_path = os.path.join(orig_path, path)
-                if os.path.isdir(full_path):
-                    repo_exists = os.system(f'gh repo view {dest_org}/{path}') == 0
-                    if not repo_exists:
-                        os.chdir(full_path)
+            full_path = os.path.join(orig_path, path)
+            if os.path.isdir(full_path):
+                repo_name = f"{dest_org}/{path}"
+                repo_exists = os.system(f'gh repo view {repo_name}') == 0
 
-                        git_folder = os.path.join(full_path, '.git')
-                        if os.path.exists(git_folder):
-                            os.system(f'rmdir /s /q "{git_folder}"')
-                        
-                        os.system(f'gh repo create {dest_org}/{path} --private')
-                        
-                        os.system('git init')
-                        os.system('git add .')
-                        os.system('git commit -m "Initial commit"')
+                # Remove pasta .git local se existir
+                git_folder = os.path.join(full_path, '.git')
+                if os.path.exists(git_folder):
+                    os.system(f'rmdir /s /q "{git_folder}"')
 
-                        remote_check = os.system('git remote show origin')
-                        if remote_check != 0:
-                            os.system(f'git remote add origin https://github.com/{dest_org}/{path}.git')
+                os.chdir(full_path)
 
-                        os.system('git branch -M main')
-                        os.system('git push -u origin main')
+                # Criar repositório apenas se não existir
+                if not repo_exists:
+                    os.system(f'gh repo create {repo_name} --private')
+
+                # Inicializar repositório Git local
+                os.system('git init')
+                os.system('git add .')
+                os.system('git commit -m "Initial commit"')
+
+                # Configurar remote origin
+                remote_url = f'https://github.com/{repo_name}.git'
+                remote_check = os.system('git remote show origin > nul 2>&1')  # Verifica se o remote existe
+                if remote_check != 0:
+                    os.system(f'git remote add origin {remote_url}')
+                else:
+                    os.system(f'git remote set-url origin {remote_url}')
+
+                os.system('git branch -M main')  # Garante que a branch é 'main'
+
+                # Push forçado para repositórios existentes, push normal para novos
+                if repo_exists:
+                    os.system('git push -f origin main')
+                else:
+                    os.system('git push -u origin main')
